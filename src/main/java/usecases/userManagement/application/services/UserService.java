@@ -18,13 +18,33 @@ public class UserService {
     TokenService tokenService;
 
     public boolean authenticate(String email, String password){
-        Optional<User> safeUserByMail = Optional.ofNullable(usersRepository.findByEmail(email));
-        return safeUserByMail.isPresent() && validateCredentials(safeUserByMail.get(),email,password);
+        boolean isAuthenticated = false;
+        if(credentialsAreFulFilled(email,password)){
+            Optional<User> safeUserByMail = Optional.ofNullable(usersRepository.findByEmail(email));
+            if(!safeUserByMail.isPresent()){
+                return isAuthenticated;
+            }
+            if(!validateCredentials(safeUserByMail.get(),email,password)){
+                return isAuthenticated;
+            }
+
+            User userInDataBase = safeUserByMail.get();
+
+            if(!tokenService.validate(userInDataBase.getToken())){
+                userInDataBase.setToken(tokenService.create());
+                usersRepository.save(userInDataBase);
+            }
+            isAuthenticated = true;
+        }
+        return isAuthenticated;
+    }
+
+    private boolean credentialsAreFulFilled(String email, String password) {
+        return email != null && password != null;
     }
 
     private boolean validateCredentials(User user,String email, String password){
-        return email.equalsIgnoreCase(user.getEmail()) && password.equalsIgnoreCase(user.getPassword())
-                && tokenService.validate(user.getToken());
+        return email.equalsIgnoreCase(user.getEmail()) && password.equalsIgnoreCase(user.getPassword());
     }
 
     public usecases.userManagement.infrastructure.dto.User registerUser(usecases.userManagement.infrastructure.dto.User user) {
@@ -41,5 +61,13 @@ public class UserService {
                 .withPassword(storedDomainUser.getPassword())
                 .withToken(storedDomainUser.getToken())
                 .build();
+    }
+
+    public void setUsersRepository(UsersRepository usersRepository) {
+        this.usersRepository = usersRepository;
+    }
+
+    public void setTokenService(TokenService tokenService) {
+        this.tokenService = tokenService;
     }
 }
