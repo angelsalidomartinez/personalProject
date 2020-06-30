@@ -4,7 +4,6 @@ import spock.lang.Specification
 import spock.lang.Unroll
 import usecases.userManagement.application.services.TokenService
 import usecases.userManagement.application.services.UserService
-import usecases.userManagement.domain.entities.User
 import usecases.userManagement.domain.entities.builders.UserBuilder
 import usecases.userManagement.infrastructure.repositories.UsersRepository
 
@@ -15,7 +14,7 @@ class UserServiceSpec extends Specification{
       given:"an userService class"
       UserService userService = new UserService()
       when:
-      boolean isAutenticated = userService.authenticate(nullEmail,nullPassword)
+      boolean isAutenticated = userService.authenticate(email,password)
       then:
       outcomeExpected == isAutenticated
       where:

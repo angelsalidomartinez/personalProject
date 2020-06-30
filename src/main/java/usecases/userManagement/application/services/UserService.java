@@ -1,5 +1,6 @@
 package usecases.userManagement.application.services;
 
+import org.apache.commons.lang3.StringUtils;
 import usecases.userManagement.domain.entities.User;
 import usecases.userManagement.infrastructure.dto.UserBuilder;
 import usecases.userManagement.infrastructure.repositories.UsersRepository;
@@ -40,7 +41,8 @@ public class UserService {
     }
 
     private boolean credentialsAreFulFilled(String email, String password) {
-        return email != null && password != null;
+        return StringUtils.isNotBlank(email) && StringUtils.isNotBlank(password)
+                && StringUtils.isNotEmpty(email) && StringUtils.isNotEmpty(password);
     }
 
     private boolean validateCredentials(User user,String email, String password){
