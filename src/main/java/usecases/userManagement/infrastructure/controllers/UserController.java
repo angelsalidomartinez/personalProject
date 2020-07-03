@@ -4,6 +4,8 @@ import org.springframework.web.bind.annotation.*;
 import usecases.userManagement.application.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import usecases.userManagement.infrastructure.dto.User;
+import usecases.userManagement.infrastructure.exceptions.UserAutenticationException;
+import usecases.userManagement.infrastructure.exceptions.UserCreationException;
 
 import javax.validation.Valid;
 
@@ -15,12 +17,12 @@ public class UserController {
     private UserService userService;
 
     @PostMapping("/authenticate")
-    public boolean authenticate(@RequestParam(value = "email") String email, @RequestParam(value ="password") String password){
+    public boolean authenticate(@RequestParam(value = "email") String email, @RequestParam(value ="password") String password) throws UserAutenticationException {
         return userService.authenticate(email, password);
     }
 
     @PutMapping("/registerUser")
-    public User registerUser(@Valid @RequestBody User user){
+    public User registerUser(@Valid @RequestBody User user) throws UserCreationException {
         return userService.registerUser(user);
     }
 

@@ -5,7 +5,9 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import org.codehaus.groovy.syntax.TokenException;
 import org.springframework.stereotype.Service;
+import usecases.userManagement.infrastructure.exceptions.TokenCreationException;
 
 import java.util.Date;
 import java.time.LocalDate;
@@ -17,14 +19,14 @@ public class TokenService {
 
     Algorithm algorithmToSignToken = Algorithm.HMAC512("secret");
 
-    String create(){
+    String create() throws TokenCreationException {
         String token = "";
         try{
             LocalDate expirationTime = LocalDateTime.now().plusDays(10).toLocalDate();
             Date expirationDate = Date.from(expirationTime.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
             token = JWT.create().withIssuer("auth0").withExpiresAt(expirationDate).sign(algorithmToSignToken);
         }catch(JWTCreationException jwtCreationException){
-
+            throw new TokenCreationException(jwtCreationException.getMessage(),jwtCreationException);
         }
         return token;
     }

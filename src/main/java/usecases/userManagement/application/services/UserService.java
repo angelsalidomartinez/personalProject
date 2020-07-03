@@ -3,6 +3,9 @@ package usecases.userManagement.application.services;
 import org.apache.commons.lang3.StringUtils;
 import usecases.userManagement.domain.entities.User;
 import usecases.userManagement.infrastructure.dto.UserBuilder;
+import usecases.userManagement.infrastructure.exceptions.TokenCreationException;
+import usecases.userManagement.infrastructure.exceptions.UserAutenticationException;
+import usecases.userManagement.infrastructure.exceptions.UserCreationException;
 import usecases.userManagement.infrastructure.repositories.UsersRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,25 +21,31 @@ public class UserService {
     @Autowired
     TokenService tokenService;
 
-    public boolean authenticate(String email, String password){
+    public boolean authenticate(String email, String password) throws UserAutenticationException {
 
-        if(!credentialsAreFulFilled(email,password)){
-            return false;
-        }
+        try{
+            if(!credentialsAreFulFilled(email,password)){
+                return false;
+            }
 
-        Optional<User> safeUserByMail = Optional.ofNullable(usersRepository.findByEmail(email));
-        if(!safeUserByMail.isPresent()){
-            return false;
-        }
-        if(!validateCredentials(safeUserByMail.get(),email,password)){
-            return false;
-        }
+            Optional<User> safeUserByMail = Optional.ofNullable(usersRepository.findByEmail(email));
+            if(!safeUserByMail.isPresent()){
+                return false;
+            }
+            if(!validateCredentials(safeUserByMail.get(),email,password)){
+                return false;
+            }
 
-        User userInDataBase = safeUserByMail.get();
+            User userInDataBase = safeUserByMail.get();
 
-        if(!tokenService.validate(userInDataBase.getToken())){
-            userInDataBase.setToken(tokenService.create());
-            usersRepository.save(userInDataBase);
+            if(!tokenService.validate(userInDataBase.getToken())){
+                userInDataBase.setToken(tokenService.create());
+                usersRepository.save(userInDataBase);
+            }
+        }catch(TokenCreationException tokenCreationException){
+            throw new UserAutenticationException("Cannot create the token",tokenCreationException);
+        }catch (Exception exception){
+            throw new UserAutenticationException("GeneralException: "+ exception.getMessage(),exception);
         }
 
         return true;
@@ -51,15 +60,23 @@ public class UserService {
         return email.equalsIgnoreCase(user.getEmail()) && password.equalsIgnoreCase(user.getPassword());
     }
 
-    public usecases.userManagement.infrastructure.dto.User registerUser(usecases.userManagement.infrastructure.dto.User user) {
-        User domainUser = new usecases.userManagement.domain.entities.builders.UserBuilder()
-                .withEmail(user.getEmail())
-                .withPassword(user.getPassword())
-                .withToken(tokenService.create())
-                .build();
+    public usecases.userManagement.infrastructure.dto.User registerUser(usecases.userManagement.infrastructure.dto.User user) throws UserCreationException {
+        User domainUser = null;
+        User storedDomainUser = null;
+        try {
+            domainUser = new usecases.userManagement.domain.entities.builders.UserBuilder()
+                    .withEmail(user.getEmail())
+                    .withPassword(user.getPassword())
+                    .withToken(tokenService.create())
+                    .build();
 
-        User storedDomainUser = usersRepository.save(domainUser);
+        storedDomainUser = usersRepository.save(domainUser);
 
+        } catch (TokenCreationException e) {
+            throw new UserCreationException("User cannot be registered", e);
+        } catch (Exception e){
+            throw new UserCreationException("User cannot be registered: " + e.getMessage(), e);
+        }
         return new UserBuilder()
                 .withEmail(storedDomainUser.getEmail())
                 .withPassword(storedDomainUser.getPassword())
