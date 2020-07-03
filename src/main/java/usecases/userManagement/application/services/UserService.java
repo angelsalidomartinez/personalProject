@@ -19,25 +19,27 @@ public class UserService {
     TokenService tokenService;
 
     public boolean authenticate(String email, String password){
-        boolean isAuthenticated = false;
-        if(credentialsAreFulFilled(email,password)){
-            Optional<User> safeUserByMail = Optional.ofNullable(usersRepository.findByEmail(email));
-            if(!safeUserByMail.isPresent()){
-                return isAuthenticated;
-            }
-            if(!validateCredentials(safeUserByMail.get(),email,password)){
-                return isAuthenticated;
-            }
 
-            User userInDataBase = safeUserByMail.get();
-
-            if(!tokenService.validate(userInDataBase.getToken())){
-                userInDataBase.setToken(tokenService.create());
-                usersRepository.save(userInDataBase);
-            }
-            isAuthenticated = true;
+        if(!credentialsAreFulFilled(email,password)){
+            return false;
         }
-        return isAuthenticated;
+
+        Optional<User> safeUserByMail = Optional.ofNullable(usersRepository.findByEmail(email));
+        if(!safeUserByMail.isPresent()){
+            return false;
+        }
+        if(!validateCredentials(safeUserByMail.get(),email,password)){
+            return false;
+        }
+
+        User userInDataBase = safeUserByMail.get();
+
+        if(!tokenService.validate(userInDataBase.getToken())){
+            userInDataBase.setToken(tokenService.create());
+            usersRepository.save(userInDataBase);
+        }
+
+        return true;
     }
 
     private boolean credentialsAreFulFilled(String email, String password) {
