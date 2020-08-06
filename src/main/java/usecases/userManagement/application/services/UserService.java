@@ -3,9 +3,7 @@ package usecases.userManagement.application.services;
 import org.apache.commons.lang3.StringUtils;
 import usecases.userManagement.domain.entities.User;
 import usecases.userManagement.infrastructure.dto.UserBuilder;
-import usecases.userManagement.infrastructure.exceptions.TokenCreationException;
-import usecases.userManagement.infrastructure.exceptions.UserAutenticationException;
-import usecases.userManagement.infrastructure.exceptions.UserCreationException;
+import usecases.userManagement.infrastructure.exceptions.*;
 import usecases.userManagement.infrastructure.repositories.UsersRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -82,6 +80,21 @@ public class UserService {
                 .withPassword(storedDomainUser.getPassword())
                 .withToken(storedDomainUser.getToken())
                 .build();
+    }
+
+    public boolean logout (String email) throws UserExpirationException {
+        Optional<User> safeUserByMail = Optional.ofNullable(usersRepository.findByEmail(email));
+        if(safeUserByMail.isPresent()){
+            User userInDataBase = safeUserByMail.get();
+            if (tokenService.validate(userInDataBase.getToken())){
+                try {
+                    userInDataBase.setToken(tokenService.expire(userInDataBase.getToken()));
+                } catch (TokenExpirationException e) {
+                    throw new UserExpirationException("User cannot log out: "+ e.getMessage(),e);
+                }
+            }
+        }
+        return true;
     }
 
     public void setUsersRepository(UsersRepository usersRepository) {
