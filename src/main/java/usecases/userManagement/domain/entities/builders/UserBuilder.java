@@ -25,6 +25,11 @@ public class UserBuilder {
         return this;
     }
 
+    public UserBuilder withStatus(String status){
+        user.setStatus(status);
+        return this;
+    }
+
     public User build(){
         return user;
     }

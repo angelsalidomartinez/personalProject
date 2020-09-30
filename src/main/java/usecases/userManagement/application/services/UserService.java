@@ -8,6 +8,11 @@ import usecases.userManagement.infrastructure.repositories.UsersRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.crypto.*;
+import javax.crypto.spec.SecretKeySpec;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.util.Optional;
 
 @Service
@@ -34,6 +39,10 @@ public class UserService {
                 return false;
             }
 
+            if(!validateAccountActivated(safeUserByMail.get())){
+                return false;
+            }
+
             User userInDataBase = safeUserByMail.get();
 
             if(!tokenService.validate(userInDataBase.getToken())){
@@ -47,6 +56,10 @@ public class UserService {
         }
 
         return true;
+    }
+
+    private boolean validateAccountActivated(User user) {
+        return "ACTIVATED".equalsIgnoreCase(user.getStatus());
     }
 
     private boolean credentialsAreFulFilled(String email, String password) {
@@ -66,6 +79,7 @@ public class UserService {
                     .withEmail(user.getEmail())
                     .withPassword(user.getPassword())
                     .withToken(tokenService.create())
+                    .withStatus("PENDING_TO_ACTIVATE")
                     .build();
 
         storedDomainUser = usersRepository.save(domainUser);
@@ -95,6 +109,34 @@ public class UserService {
             }
         }
         return true;
+    }
+
+    public usecases.userManagement.infrastructure.dto.User activate(String emailEncrypted) {
+
+        try {
+            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS7Padding", "BC");
+            String passPhrase = "enabler";
+            SecretKeySpec key = new SecretKeySpec(passPhrase.getBytes(), "AES");
+            //cipher.init(Cipher.DECRYPT_MODE, key);
+            //byte[] plainText = new byte[];
+            //int ptLength = cipher.update(emailEncrypted, 0, ctLength, plainText, 0);
+            //ptLength += cipher.doFinal(plainText, ptLength);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (NoSuchProviderException e) {
+            e.printStackTrace();
+        } catch (NoSuchPaddingException e) {
+            e.printStackTrace();
+        }/* catch (BadPaddingException e) {
+            e.printStackTrace();
+        } catch (IllegalBlockSizeException e) {
+            e.printStackTrace();
+        } catch (ShortBufferException e) {
+            e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            e.printStackTrace();
+        }*/
+        return null;
     }
 
     public void setUsersRepository(UsersRepository usersRepository) {

@@ -13,6 +13,8 @@ public class User {
     String email;
     @Column(name = "password")
     String password;
+    @Column(name="status")
+    String status;
     @Column(name = "token")
     String token;
 
@@ -46,5 +48,13 @@ public class User {
 
     public void setToken(String token) {
         this.token = token;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }
